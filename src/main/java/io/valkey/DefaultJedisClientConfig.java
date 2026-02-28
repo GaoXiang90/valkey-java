@@ -26,12 +26,13 @@ public final class DefaultJedisClientConfig implements JedisClientConfig {
 
   private final ClientSetInfoConfig clientSetInfoConfig;
   private final ClientCapaConfig clientCapaConfig;
+  private final boolean mptcp;
 
   private DefaultJedisClientConfig(RedisProtocol protocol, int connectionTimeoutMillis, int soTimeoutMillis,
       int blockingSocketTimeoutMillis, Supplier<RedisCredentials> credentialsProvider, int database,
       String clientName, boolean ssl, SSLSocketFactory sslSocketFactory, SSLParameters sslParameters,
       HostnameVerifier hostnameVerifier, HostAndPortMapper hostAndPortMapper,
-      ClientSetInfoConfig clientSetInfoConfig, ClientCapaConfig clientCapaConfig) {
+      ClientSetInfoConfig clientSetInfoConfig, ClientCapaConfig clientCapaConfig, boolean mptcp) {
     this.redisProtocol = protocol;
     this.connectionTimeoutMillis = connectionTimeoutMillis;
     this.socketTimeoutMillis = soTimeoutMillis;
@@ -46,6 +47,7 @@ public final class DefaultJedisClientConfig implements JedisClientConfig {
     this.hostAndPortMapper = hostAndPortMapper;
     this.clientSetInfoConfig = clientSetInfoConfig;
     this.clientCapaConfig = clientCapaConfig;
+    this.mptcp = mptcp;
   }
 
   @Override
@@ -129,6 +131,11 @@ public final class DefaultJedisClientConfig implements JedisClientConfig {
     return clientCapaConfig;
   }
 
+  @Override
+  public boolean isMptcp() {
+    return mptcp;
+  }
+
   public static Builder builder() {
     return new Builder();
   }
@@ -156,6 +163,7 @@ public final class DefaultJedisClientConfig implements JedisClientConfig {
 
     private ClientSetInfoConfig clientSetInfoConfig = ClientSetInfoConfig.DEFAULT;
     private ClientCapaConfig clientCapaConfig = ClientCapaConfig.DEFAULT;
+    private boolean mptcp = false;
 
     private Builder() {
     }
@@ -168,7 +176,7 @@ public final class DefaultJedisClientConfig implements JedisClientConfig {
 
       return new DefaultJedisClientConfig(redisProtocol, connectionTimeoutMillis, socketTimeoutMillis,
           blockingSocketTimeoutMillis, credentialsProvider, database, clientName, ssl,
-          sslSocketFactory, sslParameters, hostnameVerifier, hostAndPortMapper, clientSetInfoConfig, clientCapaConfig);
+          sslSocketFactory, sslParameters, hostnameVerifier, hostAndPortMapper, clientSetInfoConfig, clientCapaConfig, mptcp);
     }
 
     /**
@@ -268,6 +276,11 @@ public final class DefaultJedisClientConfig implements JedisClientConfig {
       this.clientCapaConfig = capaConfig;
       return this;
     }
+
+    public Builder mptcp(boolean mptcp) {
+      this.mptcp = mptcp;
+      return this;
+    }
   }
 
   public static DefaultJedisClientConfig create(int connectionTimeoutMillis, int soTimeoutMillis,
@@ -277,7 +290,7 @@ public final class DefaultJedisClientConfig implements JedisClientConfig {
     return new DefaultJedisClientConfig(null,
         connectionTimeoutMillis, soTimeoutMillis, blockingSocketTimeoutMillis,
         new DefaultRedisCredentialsProvider(new DefaultRedisCredentials(user, password)), database,
-        clientName, ssl, sslSocketFactory, sslParameters, hostnameVerifier, hostAndPortMapper, null, null);
+        clientName, ssl, sslSocketFactory, sslParameters, hostnameVerifier, hostAndPortMapper, null, null, false);
   }
 
   public static DefaultJedisClientConfig copyConfig(JedisClientConfig copy) {
@@ -286,6 +299,6 @@ public final class DefaultJedisClientConfig implements JedisClientConfig {
         copy.getBlockingSocketTimeoutMillis(), copy.getCredentialsProvider(),
         copy.getDatabase(), copy.getClientName(), copy.isSsl(), copy.getSslSocketFactory(),
         copy.getSslParameters(), copy.getHostnameVerifier(), copy.getHostAndPortMapper(),
-        copy.getClientSetInfoConfig(), copy.getClientCapaConfig());
+        copy.getClientSetInfoConfig(), copy.getClientCapaConfig(), copy.isMptcp());
   }
 }

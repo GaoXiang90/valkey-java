@@ -91,4 +91,8 @@ public interface JedisClientConfig {
   default ClientCapaConfig getClientCapaConfig() {
     return ClientCapaConfig.DEFAULT;
   }
+
+  default boolean isMptcp() {
+    return false;
+  }
 }

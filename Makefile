@@ -597,3 +597,46 @@ compile-module:
 
 
 .PHONY: test
+
+# --- Native compilation (auto-detect architecture) --------------------
+
+# Compile for the current platform (auto-detects x86_64 or aarch64)
+compile-mptcp-native:
+	src/main/native/compile-native.sh target/classes .
+
+# --- Native compilation (explicit per-architecture) -------------------
+
+# Compile for x86_64 only
+compile-mptcp-native-x86_64:
+	CROSS_ARCH=x86_64 src/main/native/compile-native.sh target/classes .
+
+# Compile for aarch64 only
+compile-mptcp-native-aarch64:
+	CC=aarch64-linux-gnu-gcc CROSS_ARCH=aarch64 src/main/native/compile-native.sh target/classes .
+
+# Compile for both architectures (for multi-arch JAR / release builds)
+compile-mptcp-native-all: compile-mptcp-native-x86_64 compile-mptcp-native-aarch64
+
+# --- Maven-integrated build -------------------------------------------
+
+# Full build with native library compiled automatically (Linux only)
+# The 'native' profile in pom.xml invokes compile-native.sh during mvn compile
+mptcp-build:
+	mvn clean package -Pnative -DskipTests
+
+# --- Tests ------------------------------------------------------------
+
+# Run MPTCP tests (requires Valkey server on 127.0.0.1:6379)
+mptcp-test: compile-mptcp-native
+	mvn test -Dtest=MptcpTest \
+		"-DargLine=--add-opens java.base/java.net=ALL-UNNAMED --add-opens java.base/java.io=ALL-UNNAMED"
+
+# --- Convenience: verify JAR contents --------------------------------
+
+# After 'mvn package -Pnative', verify the .so is bundled in the JAR
+mptcp-verify-jar:
+	@echo "=== Native libraries inside JAR ==="
+	jar tf target/valkey-java-*.jar | grep native/ || echo "(none found)"
+
+.PHONY: compile-mptcp-native compile-mptcp-native-x86_64 compile-mptcp-native-aarch64 \
+        compile-mptcp-native-all mptcp-build mptcp-test mptcp-verify-jar

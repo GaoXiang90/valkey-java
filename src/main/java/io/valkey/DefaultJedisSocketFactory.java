@@ -27,6 +27,7 @@ public class DefaultJedisSocketFactory implements JedisSocketFactory {
   private SSLParameters sslParameters = null;
   private HostnameVerifier hostnameVerifier = null;
   private HostAndPortMapper hostAndPortMapper = null;
+  private boolean mptcp = false;
 
   public DefaultJedisSocketFactory() {
   }
@@ -51,6 +52,7 @@ public class DefaultJedisSocketFactory implements JedisSocketFactory {
       this.sslParameters = config.getSslParameters();
       this.hostnameVerifier = config.getHostnameVerifier();
       this.hostAndPortMapper = config.getHostAndPortMapper();
+      this.mptcp = config.isMptcp();
     }
   }
 
@@ -69,6 +71,15 @@ public class DefaultJedisSocketFactory implements JedisSocketFactory {
         socket.setKeepAlive(true); // Will monitor the TCP connection is valid
         socket.setTcpNoDelay(true); // Socket buffer option, to ensure timely delivery of data
         socket.setSoLinger(true, 0); // Control calls close () method, the underlying socket is closed immediately
+
+        if (mptcp) {
+          try {
+            Mptcp.enable(socket);
+          } catch (Exception e) {
+            // Non-fatal: fall back to plain TCP silently.
+            // Mptcp.enable() already logs the root cause internally.
+          }
+        }
 
         // Passing 'host' directly will avoid another call to InetAddress.getByName() inside the InetSocketAddress constructor.
         // For machines with ipv4 and ipv6, but the startNode uses ipv4 to connect, the ipv6 connection may fail.
